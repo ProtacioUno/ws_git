@@ -1,0 +1,61 @@
+install 
+
+conda install -c conda-forge google-api-python-client google-auth-httplib2 google-auth-oauthlib
+
+
+import pandas as pd  
+# import numpy as np
+# import matplotlib.pyplot as plt
+# import math 
+
+import os
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials 
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+
+
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"] 
+SPREADSHEET_ID = "1i7YDycWzu-MtYW7BSlWRTZCM7uUU1bb4RDlZ6itTboM"
+
+def main(ragees) : 
+    credentials = None 
+    if os.path.exists("token.json") :
+        credentials = Credentials.from_authorized_user_file("token.json" , SCOPES)
+    if not credentials or not credentials.valid: 
+        if credentials and credentials.expired and credentials.refresh_token: 
+            credentials.refresh(Request())
+        else :
+            flow = InstalledAppFlow.from_client_secrets_file("credential.json" , SCOPES)
+            credentials = flow.run_local_server(port=0)
+        with open("token.json" , "w") as token :
+            token.write(credentials.to_json())
+
+    try : 
+        service = build("sheets" , "v4", credentials=credentials)
+        sheets = service.spreadsheets()
+
+        result = sheets.values().get(spreadsheetId=SPREADSHEET_ID , range=ragees).execute()
+        values   = result.get("values" , [])
+
+        df = pd.DataFrame(values[1:], columns=values[0])
+        return df
+                     
+        # display(df)
+
+        # print(values)
+        # for row in values :
+        #     print(values)
+    except HttpError as error :
+        print(error) 
+    
+
+
+# if __name__ == "__main__" :  
+#     main()
+dfs = main("Sheet1!A:C") 
+
+dfs 
+# display(df)
+
